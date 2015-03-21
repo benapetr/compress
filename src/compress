@@ -66,20 +66,20 @@ def compress_folder(path):
                 debug_log("Skipped: " + p + " already compressed");
                 continue;
             elif (args.decompress and not test_compress(p)):
-                debug_log("Skipped:" + p + " not compressed");
+                debug_log("Skipped: " + p + " not compressed");
                 continue;
             debug_log(status + " " + p + " using cp trick");
             n = p + get_rh();
+            # we first copy the file so that if we get killed, there is a low chance that original data get damaged
             if (target_exists(n)):
                 raise Exception(n + " already exists");
-            # we first copy the file so that if we get killed, there is a low chance that original data get damaged
+            # preserve file flags
             rc = subprocess.call(["cp", "-p", p, n])
             if (rc != 0):
                 error_log("Unable to copy " + p + " to " + n);
                 sys.exit(80);
             os.remove(p);
             os.rename(n, p);
-            # preserve file flags
         else:
             debug_log("Ignoring unknown file type: " + p);
     return 0;
