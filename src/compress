@@ -19,7 +19,7 @@ def error_log(text):
     return;
 
 def test_compress(path):
-    result = subprocess.check_output(["lsattr", path], shell=True, universal_newlines=True).strip();
+    result = subprocess.check_output(["lsattr", path]).strip();
     if (result == ''):
         raise Exception('lsattr returned nothing');
     result = result[:result.index(" ")];
@@ -29,11 +29,11 @@ def test_compress(path):
     return False;
 
 def set_compress(path):
-    rc = subprocess.call(["chattr", "+c", path], shell=True);
+    rc = subprocess.call(["chattr", "+c", path]);
     return rc;
 
 def unset_compress(path):
-    rc = subprocess.call(["chattr", "-c", path], shell=True);
+    rc = subprocess.call(["chattr", "-c", path]);
     return rc;
 
 def compress_file(filepath):
