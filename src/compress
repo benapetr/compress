@@ -19,7 +19,7 @@ def error_log(text):
     return;
 
 def test_compress(path):
-    result = subprocess.check_output("lsattr " + path, shell=True, universal_newlines=True).strip();
+    result = subprocess.check_output(["lsattr", path], shell=True, universal_newlines=True).strip();
     if (result == ''):
         raise Exception('lsattr returned nothing');
     result = result[:result.index(" ")];
@@ -29,11 +29,11 @@ def test_compress(path):
     return False;
 
 def set_compress(path):
-    rc = subprocess.call(["chattr", "+c", path, shell=True);
+    rc = subprocess.call(["chattr", "+c", path], shell=True);
     return rc;
 
 def unset_compress(path):
-    rc = subprocess.call(["chattr", "-c", path, shell=True);
+    rc = subprocess.call(["chattr", "-c", path], shell=True);
     return rc;
 
 def compress_file(filepath):
@@ -92,7 +92,7 @@ def process_args():
     #parser.add_argument('-f', '--force', action='store_true')
     #parser.add_argument('-s', '--strict', action='store_true')
     parser.add_argument('-V', '--version', version='compress 1.0.0.0', action='version')
-    parser.add_argument('target', type=str, help='File or folder that you want to compress')
+    parser.add_argument('target', nargs='+', type=str, help='File or folder that you want to compress')
     args = parser.parse_args()
     if (args.verbose is None):
         args.verbose = 0;
@@ -108,22 +108,26 @@ def target_exists(target):
 def recursive_scan():
     return 0;
 
+def process_target(target):
+    if (not target_exists(target)):
+        error_log("FATAL: " + target + " not found");
+        sys.exit(1);
+
+    if (not args.recursive and os.path.isdir(target)):
+        error_log("ERROR: " + target + " is a directory. Use -r option if you want to recursively compress it");
+        sys.exit(2);
+
+    if (not args.recursive):
+        compress_file(target);
+        sys.exit(0);
+
+    if (os.path.isfile(target)):
+        compress_file(target);
+    else:
+        compress_folder(target);
+    return True;
+
 args = process_args();
-if (not target_exists(args.target)):
-    error_log("FATAL: " + args.target + " not found");
-    sys.exit(1);
-
-if (not args.recursive and os.path.isdir(args.target)):
-    error_log("ERROR: " + args.target + " is a directory. Use -r option if you want to recursively compress it");
-    sys.exit(2);
-
-if (not args.recursive):
-    compress_file(args.target);
-    sys.exit(0);
-
-if (os.path.isfile(args.target)):
-    compress_file(args.target);
-else:
-    compress_folder(args.target);
-
+for item in args.target:
+    process_target(item);
 sys.exit(0);
