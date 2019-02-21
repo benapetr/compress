@@ -14,3 +14,5 @@ users can. You can simply compress whole folder (as long as it belongs to you) w
 compress -vr some_folder
 ```
 
+# installation
+sudo cp src/compress /usr/local/bin

@@ -66,14 +66,39 @@ def unset_compress(path):
     rc = subprocess.call(["chattr", "-c", path])
     return rc
 
-def compress_file(filepath):
-    debug_log("Compressing " + filepath)
+def compress_file(filepath, decompress = False):
     # fixme this suck
-    rc = set_compress(filepath)
+    rc = None
+    is_compressed = test_compress(filepath)
+    if (not decompress and is_compressed):
+        debug_log("Skipped: " + filepath + ": already compressed")
+        return True
+    if (decompress and not is_compressed):
+        debug_log("Skipped: " + filepath + ": not compressed")
+        return True
+    if (not decompress):
+        debug_log("Compressing " + filepath)
+        rc = set_compress(filepath)
+    else:
+        debug_log("Decompressing " + filepath)
+        rc = unset_compress(filepath)
+
     if (rc != 0):
-        error_log("error: unable to set compression flag of " + filepath + " error code: " + str(rc))
-        sys.exit(rc)
-    return 0
+        error_log("ERROR: unable to set compression flag of " + filepath + " error code: " + str(rc))
+        return False
+
+    # Now we changed the attribute of file, but that doesn't change its actual compression until you either defragment it (requires root) or copy it
+    # So let's copy it somewhere and then back to original place
+    n = filepath + get_rh()
+    if (target_exists(n)):
+        raise Exception(n + " already exists")
+    rc = subprocess.call(["cp", "--preserve=mode,ownership,timestamps,xattr", filepath, n])
+    if (rc != 0):
+        error_log("Unable to copy " + filepath + " to " + n)
+        sys.exit(80)
+    os.remove(filepath)
+    os.rename(n, filepath)
+    return True
 
 def compress_folder(path):
     status = "Compressing"
@@ -85,7 +110,7 @@ def compress_folder(path):
     else:
         rc = set_compress(path)
     if (rc != 0):
-        error_log("error: unable to set compression flag of " + path + " error code: " + str(rc))
+        error_log("ERROR: unable to set compression flag of " + path + " error code: " + str(rc))
         sys.exit(rc)
     for item in os.listdir(path):
         p = path + "/" + item
@@ -96,10 +121,10 @@ def compress_folder(path):
         elif (os.path.isfile(p)):
             # now this is a btrfs hack we test if file is already compressed and if it's not, we will move it
             if (not args.decompress and test_compress(p)):
-                debug_log("Skipped: " + p + " already compressed")
+                debug_log("Skipped: " + p + ": already compressed")
                 continue
             elif (args.decompress and not test_compress(p)):
-                debug_log("Skipped: " + p + " not compressed")
+                debug_log("Skipped: " + p + ": not compressed")
                 continue
             debug_log(status + " " + p + " using cp trick")
             n = p + get_rh()
@@ -148,11 +173,10 @@ def process_target(target):
 
     if (not args.recursive and os.path.isdir(target)):
         error_log("ERROR: " + target + " is a directory. Use -r option if you want to recursively compress it")
-        sys.exit(2)
+        return False
 
     if (not args.recursive):
-        compress_file(target)
-        return True
+        return compress_file(target, args.decompress)
 
     if (os.path.isfile(target)):
         compress_file(target)
