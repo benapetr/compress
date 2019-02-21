@@ -16,3 +16,6 @@ compress -vr some_folder
 
 # installation
 sudo cp src/compress /usr/local/bin
+
+# known issues
+compress doesn't check if files that are being compressed are open or not, it's not recommended to use compress on files that are open by other processes, since compress will unlink them, resulting in open file descriptors to deleted files.
