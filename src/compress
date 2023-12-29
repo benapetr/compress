@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # BSD 2-Clause License
 
@@ -49,7 +49,7 @@ def error_log(text):
     return
 
 def test_compress(path):
-    result = subprocess.check_output(["lsattr", path]).strip()
+    result = subprocess.run(["lsattr", path], check=True, capture_output=True, text=True).stdout.strip()
     if (result == ''):
         raise Exception('lsattr returned nothing')
     result = result[:result.index(" ")]
