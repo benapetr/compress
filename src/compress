@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # BSD 2-Clause License
 
@@ -49,14 +49,14 @@ def error_log(text):
     return
 
 def test_compress(path):
-    result = subprocess.check_output(["lsattr", path]).strip()
-    if (result == ''):
-        raise Exception('lsattr returned nothing')
-    result = result[:result.index(" ")]
-    for f in result:
-        if (f == 'c'):
-            return True
-    return False
+    try:
+        result = subprocess.check_output(["lsattr", path]).decode('utf-8').strip()
+        if not result:
+            raise Exception('lsattr returned nothing')
+        # Check if 'c' is in the attribute string
+        return 'c' in result.split()[0]
+    except subprocess.CalledProcessError as e:
+        raise Exception(f'Error running lsattr: {e}')
 
 def set_compress(path):
     rc = subprocess.call(["chattr", "+c", path])
